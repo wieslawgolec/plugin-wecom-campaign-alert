@@ -1,0 +1,42 @@
+<div class="panel panel-primary">
+    <div class="panel-heading">
+        <h3 class="panel-title">{{ 'mautic.config.tab.wecomcampaignalertconfig'|trans }}</h3>
+    </div>
+    <div class="panel-body">
+        {% set fields = [
+            'wecom_campaign_alert_enabled',
+            'wecom_campaign_alert_key',
+            'wecom_campaign_alert_msgtype',
+            'wecom_campaign_alert_email_send_enabled',
+            'wecom_campaign_alert_email_open_enabled',
+            'wecom_campaign_alert_publish_enabled',
+            'wecom_campaign_alert_publish_schedule_enabled',
+            'wecom_campaign_alert_restart_enabled',
+            'wecom_campaign_alert_stall_enabled',
+            'wecom_campaign_alert_maintenance_stall_enabled',
+            'wecom_campaign_alert_stall_hours',
+            'wecom_campaign_alert_maintenance_window_start',
+            'wecom_campaign_alert_maintenance_window_end',
+            'wecom_campaign_alert_timeout'
+        ] %}
+        {% for name in fields %}
+            {% if form[name] is defined %}
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form_row(form[name]) }}
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+        {# Render any remaining fields not listed above #}
+        {% for name, field in form.children %}
+            {% if name not in fields %}
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form_row(field) }}
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
