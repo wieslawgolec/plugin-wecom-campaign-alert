@@ -19,6 +19,10 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Cron: mautic:wecom:check-scheduled-emails.
  *
  * Alert via WeCom if scheduled email.send count is unchanged for N hours.
+ *
+ * Stall state is always refreshed when the count is 0 (queue drained) or when
+ * the live count changes, so a finished send cannot leave a stale non-zero
+ * window that falsely triggers later.
  */
 #[AsCommand(
     name: 'mautic:wecom:check-scheduled-emails',
@@ -26,9 +30,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class CheckScheduledEmailsCommand extends Command
 {
-    private const STATE_COUNT   = 'scheduled_email_count';
-    private const STATE_SINCE   = 'scheduled_email_count_since';
-    private const STATE_ALERTED = 'scheduled_email_stalled_alerted';
+    public const STATE_COUNT   = 'scheduled_email_count';
+    public const STATE_SINCE   = 'scheduled_email_count_since';
+    public const STATE_ALERTED = 'scheduled_email_stalled_alerted';
 
     public function __construct(
         private readonly CommandGuard $commandGuard,
@@ -72,22 +76,23 @@ class CheckScheduledEmailsCommand extends Command
 
         $output->writeln(sprintf('<info>Current scheduled email.send count: %d</info>', $currentCount));
 
+        // Queue drained: always clear stall window so finished sends cannot false-positive.
+        if (0 === $currentCount) {
+            $this->resetStallState($now, 0);
+            $output->writeln('<info>No scheduled emails; stall window cleared (count=0).</info>');
+
+            return Command::SUCCESS;
+        }
+
+        // Count changed (progress or new backlog): start a fresh stall window.
         if (null === $prevCount || (int) $prevCount !== $currentCount) {
-            $this->noticeTracker->setState(self::STATE_COUNT, (string) $currentCount);
-            $this->noticeTracker->setState(self::STATE_SINCE, $now->format(\DateTimeInterface::ATOM));
-            $this->noticeTracker->setState(self::STATE_ALERTED, '0');
+            $this->resetStallState($now, $currentCount);
 
             $output->writeln(sprintf(
                 '<info>Count changed (was %s). Resetting stall window at %s.</info>',
                 $prevCount ?? 'n/a',
                 $now->format(\DateTimeInterface::ATOM)
             ));
-
-            return Command::SUCCESS;
-        }
-
-        if (0 === $currentCount) {
-            $output->writeln('<info>No scheduled emails; nothing stalled.</info>');
 
             return Command::SUCCESS;
         }
@@ -151,5 +156,12 @@ class CheckScheduledEmailsCommand extends Command
         }
 
         return Command::SUCCESS;
+    }
+
+    private function resetStallState(\DateTimeImmutable $now, int $count): void
+    {
+        $this->noticeTracker->setState(self::STATE_COUNT, (string) $count);
+        $this->noticeTracker->setState(self::STATE_SINCE, $now->format(\DateTimeInterface::ATOM));
+        $this->noticeTracker->setState(self::STATE_ALERTED, '0');
     }
 }
