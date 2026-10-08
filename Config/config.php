@@ -5,7 +5,7 @@ declare(strict_types=1);
 return [
     'name'        => 'WeCom Campaign Alert',
     'description' => 'Sends WeCom (企业微信) group-robot markdown alerts once per campaign email send, and when scheduled email counts stall.',
-    'version'     => '1.0.2',
+    'version'     => '1.0.3',
     'author'      => 'Wieslaw Golec',
 
     'parameters' => [
