@@ -6,8 +6,10 @@ namespace MauticPlugin\WeComCampaignAlertBundle\Form\Type;
 
 use Mautic\CoreBundle\Form\Type\YesNoButtonGroupType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 
@@ -16,6 +18,12 @@ use Symfony\Component\Form\FormBuilderInterface;
  */
 class ConfigType extends AbstractType
 {
+    /** @var list<string> */
+    private const DEFAULT_LOCKS = [
+        '/opt/mautic7/var/cache/run/.maintenance-cronjob',
+        '/opt/mautic7/var/cache/run/.maintenance-schedule',
+    ];
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $data = is_array($options['data'] ?? null) ? $options['data'] : [];
@@ -51,9 +59,9 @@ class ConfigType extends AbstractType
         ]);
 
         foreach ([
-            'wecom_campaign_alert_email_send_enabled'       => 'wecomcampaignalert.config.email_send_enabled',
-            'wecom_campaign_alert_email_open_enabled'       => 'wecomcampaignalert.config.email_open_enabled',
-            'wecom_campaign_alert_publish_enabled'          => 'wecomcampaignalert.config.publish_enabled',
+            'wecom_campaign_alert_email_send_enabled'        => 'wecomcampaignalert.config.email_send_enabled',
+            'wecom_campaign_alert_email_open_enabled'        => 'wecomcampaignalert.config.email_open_enabled',
+            'wecom_campaign_alert_publish_enabled'           => 'wecomcampaignalert.config.publish_enabled',
             'wecom_campaign_alert_publish_schedule_enabled' => 'wecomcampaignalert.config.publish_schedule_enabled',
             'wecom_campaign_alert_restart_enabled'          => 'wecomcampaignalert.config.restart_enabled',
             'wecom_campaign_alert_stall_enabled'            => 'wecomcampaignalert.config.stall_enabled',
@@ -97,6 +105,31 @@ class ConfigType extends AbstractType
             'attr'       => ['class' => 'form-control'],
             'required'   => true,
         ]);
+
+        // Multi-path maintenance locks: one absolute path per line (also accepts commas).
+        // Saved as list<string> in local.php; empty list disables lock gating.
+        $locksField = $builder->create('wecom_campaign_alert_maintenance_locks', TextareaType::class, [
+            'label'      => 'wecomcampaignalert.config.maintenance_locks',
+            'label_attr' => ['class' => 'control-label'],
+            'attr'       => [
+                'class'       => 'form-control',
+                'rows'        => 4,
+                'placeholder' => implode("\n", self::DEFAULT_LOCKS),
+            ],
+            'required'   => false,
+            'help'       => 'wecomcampaignalert.config.maintenance_locks.help',
+        ]);
+        $locksField->addModelTransformer(new CallbackTransformer(
+            // Model (array|string|null) → view (string for textarea)
+            function (mixed $value): string {
+                return $this->locksToText($value);
+            },
+            // View (string) → model (list<string>)
+            function (mixed $value): array {
+                return $this->textToLocks(is_string($value) ? $value : '');
+            }
+        ));
+        $builder->add($locksField);
     }
 
     public function getBlockPrefix(): string
@@ -111,5 +144,34 @@ class ConfigType extends AbstractType
         }
 
         return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function textToLocks(string $text): array
+    {
+        $parts = preg_split('/[\r\n,]+/', $text) ?: [];
+
+        return array_values(array_filter(array_map('trim', $parts), static fn (string $p): bool => '' !== $p));
+    }
+
+    private function locksToText(mixed $value): string
+    {
+        if (null === $value) {
+            return implode("\n", self::DEFAULT_LOCKS);
+        }
+
+        if (is_array($value)) {
+            $paths = array_values(array_filter(array_map('strval', $value), static fn (string $p): bool => '' !== trim($p)));
+
+            return implode("\n", $paths);
+        }
+
+        if (is_string($value)) {
+            return implode("\n", $this->textToLocks($value));
+        }
+
+        return implode("\n", self::DEFAULT_LOCKS);
     }
 }

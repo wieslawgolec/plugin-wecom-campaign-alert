@@ -73,18 +73,37 @@ class CommandGuard
     }
 
     /**
+     * Resolve configured lock paths.
+     *
+     * - null / unset → built-in defaults
+     * - empty array or blank string → no locks (UI cleared the field)
+     * - array or newline/comma-separated string → those paths
+     *
      * @return list<string>
      */
     public function getLockfilePaths(): array
     {
         $configured = $this->coreParametersHelper->get('wecom_campaign_alert_maintenance_locks', null);
 
-        if (is_array($configured) && [] !== $configured) {
-            return array_values(array_filter(array_map('strval', $configured)));
+        if (null === $configured) {
+            return self::DEFAULT_LOCKFILES;
         }
 
-        if (is_string($configured) && '' !== trim($configured)) {
-            return array_values(array_filter(array_map('trim', explode(',', $configured))));
+        if (is_array($configured)) {
+            return array_values(array_filter(
+                array_map(static fn ($p): string => trim((string) $p), $configured),
+                static fn (string $p): bool => '' !== $p
+            ));
+        }
+
+        if (is_string($configured)) {
+            if ('' === trim($configured)) {
+                return [];
+            }
+
+            $parts = preg_split('/[\r\n,]+/', $configured) ?: [];
+
+            return array_values(array_filter(array_map('trim', $parts), static fn (string $p): bool => '' !== $p));
         }
 
         return self::DEFAULT_LOCKFILES;

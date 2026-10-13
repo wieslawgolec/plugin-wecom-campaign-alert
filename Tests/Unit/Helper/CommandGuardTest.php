@@ -49,6 +49,32 @@ final class CommandGuardTest extends TestCase
         $guard  = new CommandGuard($params);
         self::assertSame(['/x', '/y'], $guard->getLockfilePaths());
     }
+    public function testLockfilePathsFromNewlines(): void
+    {
+        $params = new CoreParametersHelper([
+            'wecom_campaign_alert_maintenance_locks' => "/path/one\n/path/two\r\n/path/three",
+        ]);
+        $guard = new CommandGuard($params);
+        self::assertSame(['/path/one', '/path/two', '/path/three'], $guard->getLockfilePaths());
+    }
+    public function testEmptyLocksDisableGating(): void
+    {
+        $params = new CoreParametersHelper([
+            'wecom_campaign_alert_enabled' => true,
+            'wecom_campaign_alert_maintenance_locks' => [],
+        ]);
+        $guard = new CommandGuard($params);
+        self::assertSame([], $guard->getLockfilePaths());
+        self::assertNull($guard->getBlockReason(false));
+    }
+    public function testNullLocksUseDefaults(): void
+    {
+        $params = new CoreParametersHelper(['wecom_campaign_alert_enabled' => true]);
+        $guard  = new CommandGuard($params);
+        $paths  = $guard->getLockfilePaths();
+        self::assertContains('/opt/mautic7/var/cache/run/.maintenance-cronjob', $paths);
+        self::assertContains('/opt/mautic7/var/cache/run/.maintenance-schedule', $paths);
+    }
     public function testActiveLockBlocks(): void
     {
         $lock = sys_get_temp_dir().'/wecom_test_lock_'.uniqid('', true);

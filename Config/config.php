@@ -5,7 +5,7 @@ declare(strict_types=1);
 return [
     'name'        => 'WeCom Campaign Alert',
     'description' => 'Sends WeCom (企业微信) group-robot markdown alerts once per campaign email send, and when scheduled email counts stall.',
-    'version'     => '1.0.3',
+    'version'     => '1.0.4',
     'author'      => 'Wieslaw Golec',
 
     'parameters' => [
@@ -29,7 +29,8 @@ return [
 
         'wecom_campaign_alert_stall_hours'   => 1,
         'wecom_campaign_alert_timeout'       => 10,
-        // Comma-separated or array of absolute paths; if any exists, cron commands skip (unless --force)
+        // Absolute paths (array, or newline/comma-separated string from UI).
+        // null → built-in defaults; empty → no lock gating.
         'wecom_campaign_alert_maintenance_locks' => [
             '/opt/mautic7/var/cache/run/.maintenance-cronjob',
             '/opt/mautic7/var/cache/run/.maintenance-schedule',

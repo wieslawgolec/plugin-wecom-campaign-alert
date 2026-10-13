@@ -17,12 +17,13 @@
             'wecom_campaign_alert_stall_hours',
             'wecom_campaign_alert_maintenance_window_start',
             'wecom_campaign_alert_maintenance_window_end',
-            'wecom_campaign_alert_timeout'
+            'wecom_campaign_alert_timeout',
+            'wecom_campaign_alert_maintenance_locks'
         ] %}
         {% for name in fields %}
             {% if form[name] is defined %}
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-{{ name == 'wecom_campaign_alert_maintenance_locks' ? '12' : '6' }}">
                         {{ form_row(form[name]) }}
                     </div>
                 </div>
