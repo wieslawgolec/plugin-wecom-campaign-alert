@@ -222,21 +222,6 @@ Unit coverage includes:
 
 ---
 
-## Production checklist
-
-- [x] Master switch + per-notice toggles
-- [x] WeCom markdown & text payloads
-- [x] Once-only send/open markers with clear/reset for recurring campaigns
-- [x] Stall detection with explicit **count=0** state refresh (no false positives after send completes)
-- [x] Publish flag + schedule cron
-- [x] Maintenance lock gates on all cron commands (**UI-configurable multi-path list**)
-- [x] Migrations for notices + state tables
-- [x] Test-notice command for ops verification
-- [x] PHPUnit 11.5 suite + GitHub Actions matrix
-- [x] Funding / sponsor metadata (`.github/FUNDING.yml`)
-
----
-
 ## Support / sponsor
 
 If this plugin helps your stack:
