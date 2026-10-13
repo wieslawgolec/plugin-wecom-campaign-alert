@@ -7,7 +7,7 @@
 | | |
 |---|---|
 | **Bundle** | `WeComCampaignAlertBundle` |
-| **Version** | 1.0.3 |
+| **Version** | 1.0.4 |
 | **PHP** | ≥ 8.2 (CI: 8.2, 8.5, 8.6) |
 | **PHPUnit** | 11.5 |
 | **License** | GPL-3.0-or-later |
@@ -96,12 +96,23 @@ Enable the plugin under **Settings → Plugins**, then open **Configuration → 
 | `wecom_campaign_alert_maintenance_window_start` | `6` | Asia/Shanghai hour (inclusive) |
 | `wecom_campaign_alert_maintenance_window_end` | `17` | Asia/Shanghai hour (exclusive) |
 | `wecom_campaign_alert_timeout` | `10` | HTTP timeout (seconds) |
-| `wecom_campaign_alert_maintenance_locks` | see below | Paths; if any exist, cron commands skip |
+| `wecom_campaign_alert_maintenance_locks` | see below | Lock file paths (UI editable) |
 
-Default lock paths:
+### Maintenance lock paths (UI)
 
-- `/opt/mautic7/var/cache/run/.maintenance-cronjob`
-- `/opt/mautic7/var/cache/run/.maintenance-schedule`
+Under **Configuration → WeCom Campaign Alert → Maintenance lock file paths**:
+
+- Enter **one absolute path per line** (commas also accepted).
+- If **any** listed file exists, all `mautic:wecom:*` cron commands skip (unless `--force`).
+- **Leave empty** to disable lock gating entirely.
+- Defaults (shown when unset):
+
+```
+/opt/mautic7/var/cache/run/.maintenance-cronjob
+/opt/mautic7/var/cache/run/.maintenance-schedule
+```
+
+Saved as a string list in `local.php` / parameters; `CommandGuard` accepts array, newline-separated, or comma-separated values.
 
 ---
 
@@ -205,7 +216,7 @@ CI (GitHub Actions) runs PHPUnit 11.5 on **PHP 8.2, 8.5, and 8.6**.
 Unit coverage includes:
 
 - `MessageFormatter` (all alert types, markdown/text, escaping, relative time)
-- `CommandGuard` (enable/disable, force, lock files)
+- `CommandGuard` (enable/disable, force, lock files, newline/CSV paths)
 - Stall decision table (count=0 reset, progress reset, alert / skip / force)
 - `WeComSender` msgtype / empty key (HTTP client optional in standalone env)
 
@@ -218,7 +229,7 @@ Unit coverage includes:
 - [x] Once-only send/open markers with clear/reset for recurring campaigns
 - [x] Stall detection with explicit **count=0** state refresh (no false positives after send completes)
 - [x] Publish flag + schedule cron
-- [x] Maintenance lock gates on all cron commands
+- [x] Maintenance lock gates on all cron commands (**UI-configurable multi-path list**)
 - [x] Migrations for notices + state tables
 - [x] Test-notice command for ops verification
 - [x] PHPUnit 11.5 suite + GitHub Actions matrix
