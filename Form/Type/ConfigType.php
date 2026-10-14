@@ -59,12 +59,12 @@ class ConfigType extends AbstractType
         ]);
 
         foreach ([
-            'wecom_campaign_alert_email_send_enabled'        => 'wecomcampaignalert.config.email_send_enabled',
-            'wecom_campaign_alert_email_open_enabled'        => 'wecomcampaignalert.config.email_open_enabled',
-            'wecom_campaign_alert_publish_enabled'           => 'wecomcampaignalert.config.publish_enabled',
-            'wecom_campaign_alert_publish_schedule_enabled' => 'wecomcampaignalert.config.publish_schedule_enabled',
-            'wecom_campaign_alert_restart_enabled'          => 'wecomcampaignalert.config.restart_enabled',
-            'wecom_campaign_alert_stall_enabled'            => 'wecomcampaignalert.config.stall_enabled',
+            'wecom_campaign_alert_email_send_enabled'         => 'wecomcampaignalert.config.email_send_enabled',
+            'wecom_campaign_alert_email_open_enabled'         => 'wecomcampaignalert.config.email_open_enabled',
+            'wecom_campaign_alert_publish_enabled'            => 'wecomcampaignalert.config.publish_enabled',
+            'wecom_campaign_alert_publish_schedule_enabled'  => 'wecomcampaignalert.config.publish_schedule_enabled',
+            'wecom_campaign_alert_restart_enabled'           => 'wecomcampaignalert.config.restart_enabled',
+            'wecom_campaign_alert_stall_enabled'             => 'wecomcampaignalert.config.stall_enabled',
             'wecom_campaign_alert_maintenance_stall_enabled' => 'wecomcampaignalert.config.maintenance_stall_enabled',
         ] as $field => $label) {
             $builder->add($field, YesNoButtonGroupType::class, [
@@ -81,6 +81,18 @@ class ConfigType extends AbstractType
             'label_attr' => ['class' => 'control-label'],
             'attr'       => ['class' => 'form-control'],
             'required'   => true,
+        ]);
+
+        $builder->add('wecom_campaign_alert_timezone', TextType::class, [
+            'label'      => 'wecomcampaignalert.config.timezone',
+            'label_attr' => ['class' => 'control-label'],
+            'attr'       => [
+                'class'       => 'form-control',
+                'placeholder' => 'Asia/Shanghai',
+            ],
+            'data'       => (string) ($data['wecom_campaign_alert_timezone'] ?? 'Asia/Shanghai'),
+            'required'   => false,
+            'help'       => 'wecomcampaignalert.config.timezone.help',
         ]);
 
         $builder->add('wecom_campaign_alert_maintenance_window_start', IntegerType::class, [
@@ -120,11 +132,9 @@ class ConfigType extends AbstractType
             'help'       => 'wecomcampaignalert.config.maintenance_locks.help',
         ]);
         $locksField->addModelTransformer(new CallbackTransformer(
-            // Model (array|string|null) → view (string for textarea)
             function (mixed $value): string {
                 return $this->locksToText($value);
             },
-            // View (string) → model (list<string>)
             function (mixed $value): array {
                 return $this->textToLocks(is_string($value) ? $value : '');
             }
