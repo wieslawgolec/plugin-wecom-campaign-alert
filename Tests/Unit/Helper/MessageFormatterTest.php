@@ -3,8 +3,8 @@ declare(strict_types=1);
 namespace MauticPlugin\WeComCampaignAlertBundle\Tests\Unit\Helper;
 use Mautic\CoreBundle\Helper\CoreParametersHelper;
 use MauticPlugin\WeComCampaignAlertBundle\Helper\MessageFormatter;
+use MauticPlugin\WeComCampaignAlertBundle\Tests\Stub\TranslatorStub;
 use PHPUnit\Framework\TestCase;
-use Symfony\Contracts\Translation\TranslatorStub;
 final class MessageFormatterTest extends TestCase
 {
     private MessageFormatter $fmt;
