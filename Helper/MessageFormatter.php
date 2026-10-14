@@ -9,7 +9,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Formats alert content for WeCom group robot (text or markdown).
- * Message templates live in Translations/*/messages.ini.
+ * Message templates live in Translations/en_US/messages.ini (and other locales).
  */
 class MessageFormatter
 {
