@@ -1,14 +1,19 @@
 <?php
 declare(strict_types=1);
 namespace MauticPlugin\WeComCampaignAlertBundle\Tests\Unit\Helper;
+use Mautic\CoreBundle\Helper\CoreParametersHelper;
 use MauticPlugin\WeComCampaignAlertBundle\Helper\MessageFormatter;
 use PHPUnit\Framework\TestCase;
+use Symfony\Contracts\Translation\TranslatorStub;
 final class MessageFormatterTest extends TestCase
 {
     private MessageFormatter $fmt;
     protected function setUp(): void
     {
-        $this->fmt = new MessageFormatter();
+        $this->fmt = new MessageFormatter(
+            new TranslatorStub(),
+            new CoreParametersHelper(['wecom_campaign_alert_timezone' => 'Asia/Shanghai'])
+        );
     }
     public function testEmailSendMarkdown(): void
     {
@@ -47,7 +52,7 @@ final class MessageFormatterTest extends TestCase
         self::assertStringContainsString('unpublished', $un);
         self::assertStringContainsString('(schedule)', $un);
     }
-    public function testPublishSchedule(): void
+    public function testPublishScheduleShowsTimezone(): void
     {
         $out = $this->fmt->formatPublishScheduleAlert([
             'campaign_name' => 'Sched',
@@ -56,7 +61,8 @@ final class MessageFormatterTest extends TestCase
         ]);
         self::assertStringContainsString('Publish schedule updated', $out);
         self::assertStringContainsString('Sched', $out);
-        self::assertStringContainsString('local time', $out);
+        self::assertStringContainsString('Asia/Shanghai', $out);
+        self::assertStringNotContainsString('local time', $out);
     }
     public function testRestart(): void
     {
@@ -70,6 +76,7 @@ final class MessageFormatterTest extends TestCase
         $out   = $this->fmt->formatStallAlert(['since' => $since->format(\DateTimeInterface::ATOM)]);
         self::assertStringContainsString('stalled', $out);
         self::assertStringContainsString('2h 15m ago', $out);
+        self::assertStringContainsString('Asia/Shanghai', $out);
     }
     public function testStallAlertUnknownSince(): void
     {
@@ -98,5 +105,27 @@ final class MessageFormatterTest extends TestCase
         ], 'markdown');
         self::assertStringNotContainsString('*B', $out);
         self::assertStringNotContainsString('<tag>', $out);
+    }
+    public function testCustomTimezone(): void
+    {
+        $fmt = new MessageFormatter(
+            new TranslatorStub(),
+            new CoreParametersHelper(['wecom_campaign_alert_timezone' => 'UTC'])
+        );
+        self::assertSame('UTC', $fmt->getTimezone());
+        $out = $fmt->formatPublishScheduleAlert([
+            'campaign_name' => 'T',
+            'publish_up'    => '2026-06-15T12:00:00+00:00',
+        ]);
+        self::assertStringContainsString('(UTC)', $out);
+        self::assertStringContainsString('2026-06-15 12:00', $out);
+    }
+    public function testInvalidTimezoneFallsBack(): void
+    {
+        $fmt = new MessageFormatter(
+            new TranslatorStub(),
+            new CoreParametersHelper(['wecom_campaign_alert_timezone' => 'Not/AZone'])
+        );
+        self::assertSame(MessageFormatter::DEFAULT_TIMEZONE, $fmt->getTimezone());
     }
 }
